@@ -24,24 +24,45 @@ class Neuron {
 private:
 
     static double randomWeight(); 
-    double m_output();
+    double m_output;
     vector<Connection> m_outputWeight;
+    // member index
+    unsigned m_index;
+
 
 public:
     Neuron();
-    Neuron(unsigned nOutputs);
+    Neuron(unsigned nOutputs, unsigned index);
+    void feedForward(const Layer &prevLayer);
+    //getters
+    double getOutputVal(void) const { return m_output; };
+    //setters
+    void setOutputVal(double val){ m_output = val; }
 
 
 };
-
-double Neuron::randomWeight(){
-    return rand() / double(RAND_MAX);
-}
-Neuron::Neuron(unsigned nOutputs){
+Neuron::Neuron(unsigned nOutputs, unsigned index){
     for (unsigned conn = 0 ; conn < nOutputs; ++conn){
         m_outputWeight.push_back(Connection());
         m_outputWeight.back().weight = randomWeight();
     }
+    m_index = index;
+}
+
+void Neuron::feedForward(const Layer &prevLayer){
+    // sum of the previous layer's outputs + bias node -> new input
+    double sum = 0.0;
+
+    for(unsigned n = 0; n <prevLayer.size(); ++n){
+        sum += prevLayer[n].getOutputVal() *
+               prevLayer[n].m_outputWeight[m_index].weight;
+
+    }
+
+
+}
+double Neuron::randomWeight(){
+    return rand() / double(RAND_MAX);
 }
 
 /////////////////////////////////////////////////////
@@ -73,6 +94,7 @@ void Net::feedForward(const vector<double> &inputVal){
     // forward propagate
 
     for (unsigned layerNumber = 1; layerNumber < m_layers.size(); ++layerNumber){
+        Layer &prevLayer = m_layers[layerNumber - 1];
         for(unsigned n = 0; n < m_layers[layerNumber].size() - 1; ++n){
             m_layers[layerNumber][n].feedForward();
         }
@@ -92,7 +114,7 @@ Net::Net(const vector<unsigned> &topo){
         // needed for one more biased neuron ( <= )
         for( unsigned neuronNumber = 0; neuronNumber <= topo[layerNumber]; ++neuronNumber)
         {
-            m_layers.back().push_back(Neuron(nOutputs));
+            m_layers.back().push_back(Neuron(nOutputs, neuronNumber));
             cout << "New neuron created" << endl;
         }
         
